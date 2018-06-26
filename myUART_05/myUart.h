@@ -70,7 +70,7 @@ extern EUSCI_A_UART_initParam myUart_Param_9600_8N1_ACLK32Kz;
 
 //***** Function Prototypes ***************************************************
 void myUart_tx     (unsigned char *txMessage);
-int myUart_rxtx    (unsigned char *txMessage);
+int myUart_rxtx    (unsigned char *txMessage,unsigned char *rxAnswer);
 int myUart_init    ( uint16_t, uint32_t, EUSCI_A_UART_initParam * );
 int myUart_writeBuf( uint16_t, unsigned char *, uint16_t, int );
 int myUart_readBuf ( uint16_t, unsigned char *, uint16_t * );

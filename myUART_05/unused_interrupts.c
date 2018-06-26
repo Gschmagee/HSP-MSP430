@@ -32,8 +32,8 @@
 //#pragma vector = TIMER0_A0_VECTOR                                               // Timer0_A5 CC0
 //#pragma vector = TIMER0_A1_VECTOR                                               // Timer0_A5 CC1-4, TA
 #pragma vector = TIMER0_B0_VECTOR                                               // Timer0_B3 CC0
-//#pragma vector = TIMER0_B1_VECTOR                                               // Timer0_B3 CC1-2, TB
-//#pragma vector = TIMER1_A0_VECTOR                                               // Timer1_A3 CC0
+#pragma vector = TIMER0_B1_VECTOR                                               // Timer0_B3 CC1-2, TB
+#pragma vector = TIMER1_A0_VECTOR                                               // Timer1_A3 CC0
 //#pragma vector = TIMER1_A1_VECTOR                                               // Timer1_A3 CC1-2, TA1
 #pragma vector = TIMER2_A0_VECTOR                                               // Timer2_A3 CC0
 #pragma vector = TIMER2_A1_VECTOR                                               // Timer2_A3 CC1, TA

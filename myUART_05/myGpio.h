@@ -8,7 +8,7 @@
 
 // Prototypes
 void initGPIO(void);
-
+void setAllPinsOutLow(void);
 
 #endif /* MYGPIO_H_ */
 

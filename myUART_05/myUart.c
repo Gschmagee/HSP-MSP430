@@ -16,7 +16,7 @@
 
 //***** Global Variables ******************************************************
 
-static unsigned short txBufLen     = 0;                                         // Number of bytes left to output; decremented as each character is sent
+static unsigned short txBufLen = 0;                                         // Number of bytes left to output; decremented as each character is sent
 unsigned char commRx[80];
 uint16_t size = 35;
 
@@ -25,21 +25,23 @@ uint16_t size = 35;
 //****************************************************************************
 void myUart_tx(unsigned char *txMessage)
 {
+    volatile unsigned long i;
     myUart_writeBuf(CHANNEL_0,(unsigned char *)txMessage,NULL,NULL);
+    for(i=100000; i>0;i--);                  //small break to allow the lora device to read the message
 }
 //****************************************************************************
 // Uart Send and Receive Function
 //****************************************************************************
-int myUart_rxtx(unsigned char *txMessage)
+int myUart_rxtx(unsigned char *txMessage,unsigned char *rxAnswer)
 {
     myUart_writeBuf(CHANNEL_0,(unsigned char *)txMessage,NULL,NULL);
     //__delay_cycles(1000);
-    myUart_writeBuf(BACKCHANNEL_UART, (unsigned char *)txMessage,NULL,NULL);
+    //myUart_writeBuf(BACKCHANNEL_UART, (unsigned char *)txMessage,NULL,NULL);
     size=sizeof(commRx);
-    myUart_readBuf( CHANNEL_0, (unsigned char *)commRx, &size);
+    myUart_readBuf( CHANNEL_0,(unsigned char *)rxAnswer, &size);
     //__delay_cycles(50000);
-    myUart_writeBuf( BACKCHANNEL_UART, (unsigned char *)commRx, NULL, NULL);
-    memset(&commRx[0], 0, sizeof(commRx));
+    //myUart_writeBuf( BACKCHANNEL_UART, (unsigned char *)commRx, NULL, NULL);
+    //memset(&commRx[0], 0, sizeof(commRx));
     return 0;
 }
 //---------------------------------------------------------------------------------------------
