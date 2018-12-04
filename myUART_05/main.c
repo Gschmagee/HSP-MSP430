@@ -28,12 +28,13 @@ void getData(void);
 #define SlEEPMODE
 
 //***** Global Variables ******************************************************
-unsigned int trashBinID = 0x0002;
+unsigned int trashBinID = 0x0001;
 
 unsigned char* sysReset="sys reset\r\n";
 unsigned char* macPause="mac pause\r\n";
-unsigned char* macAppeui="mac set appeui 70B3D57ED000F246\r\n";
-unsigned char* macAppkey="mac set appkey F15F2E102F0405DB3E5108E65721257C\r\n";
+unsigned char* macDevui="mac set deveui 0000000000000001\r\n";		//muss angepasst werden
+unsigned char* macAppeui="mac set appeui 0000000000000000\r\n";
+unsigned char* macAppkey="mac set appkey 00000000000000000000000000000001\r\n"; //muss angepasst werden
 unsigned char* macDr="mac set dr 5\r\n";
 unsigned char* macResume="mac resume\r\n";
 unsigned char* macJoin="mac join otaa\r\n";
@@ -72,7 +73,7 @@ Timer_A_initUpModeParam a1_up =
 {
      TIMER_A_CLOCKSOURCE_EXTERNAL_TXCLK,
      TIMER_A_CLOCKSOURCE_DIVIDER_1,
-     0x6,                                       //6 = 15 min with b divider 64
+     0x6,                                       //6 = ca 15 min with b divider 64 d.h 12 = 30, 24 = 1h
      TIMER_A_TAIE_INTERRUPT_ENABLE,
      TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE,
      TIMER_A_DO_CLEAR,
@@ -96,7 +97,7 @@ Timer_B_initCompareModeParam b_compare =
      0xFFFF
 };
 
-//*****************************************************************************
+//*******************************************AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA**********************************
 // Main
 //*****************************************************************************
 void main (void)
@@ -146,6 +147,7 @@ void initLora()
 #ifdef GATEWAYMODE
     myUart_tx(sysReset);
     myUart_tx(macPause);
+    myUart_tx(macDeveui);
     myUart_tx(macAppeui);
     myUart_tx(macAppkey);
     myUart_tx(macDr);
@@ -154,14 +156,15 @@ void initLora()
     myUart_tx(radioSetPwr);
     myUart_tx(radioSetWdt);
     myUart_tx(macResume);
-    myUart_rxtx(macJoin,commRx);
+    myUart_tx(macJoin);
+    /*myUart_rxtx(macJoin,commRx);
 
     while(commRx[0] != 'o' && j < 5)
     {
         for(i=1000000;i>0;i--);
         myUart_rxtx(macJoin,commRx);
         j++;
-    }
+    }*/
 #endif
 #ifdef MOTEMODE
     myUart_tx("mac pause\r\n");
@@ -217,22 +220,29 @@ void getData()
     volatile unsigned long j;
     char tx[32];
 
+#ifdef GATEWAYMODE
     for(i=6; i>0;i--)
     {
         getSensorData();
         fillLevel = getTrashcanStatus();
-
-#ifdef GATEWAYMODE
         snprintf(tx,32,"mac tx uncnf 2 0%c0%d\r\n",fillLevel,trashBinID);
-#endif
-#ifdef MOTEMODE
-        snprintf(tx,32,"radio tx 0%c0%d\r\n",fillLevel,trashBinID);
-#endif
         myUart_tx(tx);
         j = 1000000;
         do j--;
         while(j != 0);
     }
+#endif
+#ifdef MOTEMODE
+    getSensorData();
+    fillLevel = getTrashcanStatus();
+    snprintf(tx,32,"radio tx 0%c0%d\r\n",fillLevel,trashBinID);
+    myUart_tx(tx);
+    for(i=6; i>0;i--){
+        j = 1000000;
+        do j--;
+        while(j != 0);
+    }
+#endif
 #ifdef SlEEPMODE
     P4OUT |= (0x01<<2);     //switch of lora mote and sensor
     P2DIR = (0x00<<0);      //switch of high pull from uartpins to lower energy consumption
