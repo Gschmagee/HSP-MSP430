@@ -28,13 +28,13 @@ void getData(void);
 #define SlEEPMODE
 
 //***** Global Variables ******************************************************
-unsigned int trashBinID = 0x0001;
+unsigned int trashBinID = 0x0002;
 
 unsigned char* sysReset="sys reset\r\n";
 unsigned char* macPause="mac pause\r\n";
-unsigned char* macDevui="mac set deveui 0000000000000001\r\n";		//muss angepasst werden
+unsigned char* macDeveui="mac set deveui 0000000000000002\r\n";		//muss angepasst werden
 unsigned char* macAppeui="mac set appeui 0000000000000000\r\n";
-unsigned char* macAppkey="mac set appkey 00000000000000000000000000000001\r\n"; //muss angepasst werden
+unsigned char* macAppkey="mac set appkey 01020304050607080910111213141502\r\n"; //muss angepasst werden
 unsigned char* macDr="mac set dr 5\r\n";
 unsigned char* macResume="mac resume\r\n";
 unsigned char* macJoin="mac join otaa\r\n";
@@ -73,7 +73,7 @@ Timer_A_initUpModeParam a1_up =
 {
      TIMER_A_CLOCKSOURCE_EXTERNAL_TXCLK,
      TIMER_A_CLOCKSOURCE_DIVIDER_1,
-     0x6,                                       //6 = ca 15 min with b divider 64 d.h 12 = 30, 24 = 1h
+     0x24,                                       //6 = ca 15 min with b divider 64 d.h 12 = 30, 24 = 1h
      TIMER_A_TAIE_INTERRUPT_ENABLE,
      TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE,
      TIMER_A_DO_CLEAR,
@@ -83,7 +83,7 @@ Timer_A_initUpModeParam a1_up =
 Timer_B_initContinuousModeParam b_contin =
 {
      TIMER_B_CLOCKSOURCE_ACLK,
-     TIMER_A_CLOCKSOURCE_DIVIDER_4,
+     TIMER_A_CLOCKSOURCE_DIVIDER_64,         //divider in 2 Potenz erhöhen um mehr zeit zu genereieren.
      TIMER_B_TBIE_INTERRUPT_DISABLE,
      TIMER_A_DO_CLEAR,
      false
