@@ -26,8 +26,15 @@ void initGPIO(void) {
     //Setup TA2 Input Clock
     GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P1, GPIO_PIN1, GPIO_SECONDARY_MODULE_FUNCTION);
     //Setup TB0CCR2 Output
-    //GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P3, GPIO_PIN6, GPIO_PRIMARY_MODULE_FUNCTION);
-    //GPIO_setAsOutputPin( GPIO_PORT_P3, GPIO_PIN6 );
+    GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P3, GPIO_PIN6, GPIO_SECONDARY_MODULE_FUNCTION);
+    //Setup TA2CCR0 Input
+    GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P1, GPIO_PIN5, GPIO_TERNARY_MODULE_FUNCTION);
+    //Setup P1.0 and P4.2 as output
+    GPIO_setAsOutputPin( GPIO_PORT_P1, GPIO_PIN0 );
+    GPIO_setOutputLowOnPin( GPIO_PORT_P1, GPIO_PIN0 );
+    GPIO_setAsOutputPin( GPIO_PORT_P4, GPIO_PIN2 );
+    GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN2 );  // enable Lora module and sensor
+
 
     // Unlock pins (required for most FRAM devices)
     // Unless waking from LPMx.5, this should be done before clearing and enabling GPIO port interrupts
@@ -46,16 +53,16 @@ void initGPIO(void) {
 	);
 
     // EUSCI_UART_A1 pin configuration
-    GPIO_setAsPeripheralModuleFunctionOutputPin(
-    		myUart.Channels[1].TxPort,
-    		myUart.Channels[1].TxPin,
-    		myUart.Channels[1].TxSel
-	);
-    GPIO_setAsPeripheralModuleFunctionOutputPin(
-       		myUart.Channels[1].RxPort,
-        	myUart.Channels[1].RxPin,
-        	myUart.Channels[1].RxSel
-	);
+//    GPIO_setAsPeripheralModuleFunctionOutputPin(
+//    		myUart.Channels[1].TxPort,
+//    		myUart.Channels[1].TxPin,
+//    		myUart.Channels[1].TxSel
+//	);
+//    GPIO_setAsPeripheralModuleFunctionOutputPin(
+//       		myUart.Channels[1].RxPort,
+//        	myUart.Channels[1].RxPin,
+//        	myUart.Channels[1].RxSel
+//	);
 
     // Set LFXT (low freq crystal pins) to crystal input (rather than GPIO)
     // Since HFXT is not used, we don't need to set these pins. But for the
@@ -68,15 +75,6 @@ void initGPIO(void) {
             GPIO_PIN5 ,                                  // LFXOUT on PJ.5
             GPIO_PRIMARY_MODULE_FUNCTION
     );
-
-
-    P3SEL1|=    (0x01<<6);                  //1
-    P3SEL0|=    (0x00<<6);                  //1
-
-    P1DIR |= 0x01;
-    P1DIR &= ~(0x01<<5);                    //Pin 1.5 is Input
-    P1SEL1|=    (0x01<<5);                  //1
-    P1SEL0|=    (0x01<<5);                  //1
 }
 
 void setAllPinsOutLow()
@@ -128,8 +126,8 @@ void setAllPinsOutLow()
     GPIO_setOutputLowOnPin( GPIO_PORT_P3, GPIO_PIN4 );
     GPIO_setAsOutputPin( GPIO_PORT_P3, GPIO_PIN5 );
     GPIO_setOutputLowOnPin( GPIO_PORT_P3, GPIO_PIN5 );
-    GPIO_setAsOutputPin( GPIO_PORT_P3, GPIO_PIN6 );
-    GPIO_setOutputLowOnPin( GPIO_PORT_P3, GPIO_PIN6 );
+    //GPIO_setAsOutputPin( GPIO_PORT_P3, GPIO_PIN6 );
+    //GPIO_setOutputLowOnPin( GPIO_PORT_P3, GPIO_PIN6 );
     GPIO_setAsOutputPin( GPIO_PORT_P3, GPIO_PIN7 );
     GPIO_setOutputLowOnPin( GPIO_PORT_P3, GPIO_PIN7 );
     GPIO_setAsOutputPin( GPIO_PORT_P3, GPIO_PIN8 );
@@ -138,8 +136,8 @@ void setAllPinsOutLow()
     GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN0 );
     GPIO_setAsOutputPin( GPIO_PORT_P4, GPIO_PIN1 );
     GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN1 );
-    GPIO_setAsOutputPin( GPIO_PORT_P4, GPIO_PIN2 );
-    GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN2 );
+//    GPIO_setAsOutputPin( GPIO_PORT_P4, GPIO_PIN2 );
+//    GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN2 );
     GPIO_setAsOutputPin( GPIO_PORT_P4, GPIO_PIN3 );
     GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN3 );
     GPIO_setAsOutputPin( GPIO_PORT_P4, GPIO_PIN4 );

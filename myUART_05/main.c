@@ -28,33 +28,36 @@ void getData(void);
 #define SlEEPMODE
 
 //***** Global Variables ******************************************************
-unsigned int trashBinID = 0x0002;
+//static const uint16_t trashBinID = 0x000A;
 
 unsigned char* sysReset="sys reset\r\n";
 unsigned char* macPause="mac pause\r\n";
-unsigned char* macDeveui="mac set deveui 0000000000000002\r\n";		//muss angepasst werden
+unsigned char* macDeveui="mac set deveui 0000000000000004\r\n";		//muss angepasst werden
 unsigned char* macAppeui="mac set appeui 0000000000000000\r\n";
-unsigned char* macAppkey="mac set appkey 01020304050607080910111213141502\r\n"; //muss angepasst werden
+unsigned char* macAppkey="mac set appkey 01020304050607080910111213141504\r\n"; //muss angepasst werden
 unsigned char* macDr="mac set dr 5\r\n";
 unsigned char* macResume="mac resume\r\n";
 unsigned char* macJoin="mac join otaa\r\n";
 unsigned char* radioSetFreq="radio set freq 868100000\r\n";
-unsigned char* radioSetSf="radio set sf sf7\r\n";
+unsigned char* radioSetSf="radio set sf sf12\r\n";
 unsigned char* radioSetPwr="radio set pwr 15\r\n";
 unsigned char* radioSetWdt="radio set wdt 60000\r\n";
 
-unsigned long wert0;
-unsigned long wert1;
-unsigned long USekunden;
-unsigned long Luftconst = 343;
-unsigned long Umeter;
-unsigned long AbstandMM;
+// Werte fuers Sensor-auslesen
+volatile uint32_t wert0;
+volatile uint32_t wert1;
+volatile uint32_t USekunden;
+volatile uint32_t Umeter;
+volatile uint16_t AbstandMM;
+static const uint16_t Luftconst = 343;
+
+
 
 Timer_A_initContinuousModeParam a0_contin =
 {
-     TIMER_B_CLOCKSOURCE_ACLK,
+     TIMER_A_CLOCKSOURCE_ACLK,
      TIMER_A_CLOCKSOURCE_DIVIDER_1,
-     TIMER_A_TAIE_INTERRUPT_ENABLE,
+     TIMER_A_TAIE_INTERRUPT_DISABLE,
      TIMER_A_DO_CLEAR,
      false
 };
@@ -73,7 +76,7 @@ Timer_A_initUpModeParam a1_up =
 {
      TIMER_A_CLOCKSOURCE_EXTERNAL_TXCLK,
      TIMER_A_CLOCKSOURCE_DIVIDER_1,
-     0x24,                                       //6 = ca 15 min with b divider 64 d.h 12 = 30, 24 = 1h
+     540,                                       //Periode zwischen Uploads ist clock periode von unten * diese Zahl
      TIMER_A_TAIE_INTERRUPT_ENABLE,
      TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE,
      TIMER_A_DO_CLEAR,
@@ -83,9 +86,9 @@ Timer_A_initUpModeParam a1_up =
 Timer_B_initContinuousModeParam b_contin =
 {
      TIMER_B_CLOCKSOURCE_ACLK,
-     TIMER_A_CLOCKSOURCE_DIVIDER_64,         //divider in 2 Potenz erhöhen um mehr zeit zu genereieren.
+     TIMER_B_CLOCKSOURCE_DIVIDER_10,         // Clock periode fuer timerA1 = 2s * timerB_divider
      TIMER_B_TBIE_INTERRUPT_DISABLE,
-     TIMER_A_DO_CLEAR,
+     TIMER_B_DO_CLEAR,
      false
 };
 
@@ -110,7 +113,12 @@ void main (void)
     initClocks();
     myUart_init(CHANNEL_0, 57600, &myUart_Param_57600_8N1_SMCLK8MHz);
     __enable_interrupt();
-    initLora();
+    //initLora();
+
+    // wait a short time
+    volatile uint16_t j = 0xFFFF;
+    do j--;
+    while (j > 0);
 
     while(1)
     {
@@ -121,30 +129,30 @@ void main (void)
 void initTimer()
 {
     // init A0
-    Timer_A_initContinuousMode(TIMER_A0_BASE, &a0_contin);
-    Timer_A_initCaptureMode(TIMER_A0_BASE,&a0_capture);
-    Timer_A_enableInterrupt(TIMER_A0_BASE);
-    // init A2
+    //Timer_A_initContinuousMode(TIMER_A0_BASE, &a0_contin);
+    //Timer_A_initCaptureMode(TIMER_A0_BASE,&a0_capture);
+    //Timer_A_enableInterrupt(TIMER_A0_BASE);
+    // init A1
     Timer_A_clearTimerInterrupt(TIMER_A1_BASE);
     Timer_A_initUpMode(TIMER_A1_BASE, &a1_up);
     // init B0
     Timer_B_initContinuousMode(TIMER_B0_BASE, &b_contin);
     Timer_B_clearCaptureCompareInterrupt(TIMER_B0_BASE, TIMER_B_CAPTURECOMPARE_REGISTER_2);
     Timer_B_initCompareMode(TIMER_B0_BASE, &b_compare);
+    Timer_B_setCompareValue(TIMER_B0_BASE, TIMER_B_CAPTURECOMPARE_REGISTER_0, 0x0002);
     // start Timers
-    Timer_A_startCounter(TIMER_A0_BASE,TIMER_A_CONTINUOUS_MODE);
+    //Timer_A_startCounter(TIMER_A0_BASE,TIMER_A_CONTINUOUS_MODE);
     Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
-    Timer_B_setCompareValue(TIMER_B0_BASE, TIMER_B_CAPTURECOMPARE_REGISTER_0, 0x0000);
     Timer_B_startCounter(TIMER_B0_BASE, TIMER_B_CONTINUOUS_MODE);
 }
 
 void initLora()
 {
-    volatile unsigned long i;
-    volatile unsigned int j;
-    unsigned char commRx[20];
-    j=0;
 #ifdef GATEWAYMODE
+    volatile uint32_t j = 0xFFFF;
+    do j--;
+    while (j > 0);
+
     myUart_tx(sysReset);
     myUart_tx(macPause);
     myUart_tx(macDeveui);
@@ -157,14 +165,11 @@ void initLora()
     myUart_tx(radioSetWdt);
     myUart_tx(macResume);
     myUart_tx(macJoin);
-    /*myUart_rxtx(macJoin,commRx);
 
-    while(commRx[0] != 'o' && j < 5)
-    {
-        for(i=1000000;i>0;i--);
-        myUart_rxtx(macJoin,commRx);
-        j++;
-    }*/
+    j = 3500000;
+    do j--;
+    while (j > 0);
+
 #endif
 #ifdef MOTEMODE
     myUart_tx("mac pause\r\n");
@@ -186,48 +191,69 @@ void initLora()
 
 void getSensorData()
 {
-    volatile unsigned long i;
-    volatile unsigned int j;
+    volatile uint16_t i;
+    volatile uint16_t j;
 
-    P1OUT |= 0x01;      //toggle Pin 1.1 to activate the sensor
-    i = 100000;
-    j = 20;
-    for(j;j>0;j--);
-    P1OUT &= ~0x01;
+    GPIO_setOutputHighOnPin( GPIO_PORT_P1, GPIO_PIN0 );      //toggle Pin 1.0 to activate the sensor
+    i = 0xFFFF;
+    j = 10;
+    do j--;
+    while (j > 0);
+    GPIO_setOutputLowOnPin( GPIO_PORT_P1, GPIO_PIN0 );
 
     do i--;
-    while(i != 0);
+    while(i > 0);
 }
 
-char getTrashcanStatus()
+char getTrashcanStatus(void)
 {
-    if(AbstandMM < 1200 && AbstandMM > 750)
+    if ((AbstandMM < 1200) && (AbstandMM > 750)) {
         return '1';                                   //1/4 filled
-    else if(AbstandMM <= 750 && AbstandMM > 500)
+    }
+    else if ((AbstandMM <= 750) && (AbstandMM > 500)) {
         return '2';                                   //1/2 filled
-    else if(AbstandMM <= 500 && AbstandMM > 250)
+    }
+    else if ((AbstandMM <= 500) && (AbstandMM > 250)) {
         return '3';                                   //3/4 filled
-    else if(AbstandMM <= 250 && AbstandMM > 0)
+    }
+    else if ((AbstandMM <= 250) && (AbstandMM > 0)) {
         return '4';                                   //full
-    else
+    }
+    else {
         return 'F';                                   //Error
+    }
 }
 
 void getData()
 {
-    unsigned char fillLevel;
-    volatile unsigned int i;
-    volatile unsigned long j;
+    char fillLevel;
+    volatile uint16_t i;
+    volatile uint32_t j;
     char tx[32];
 
+    // Init LoRa module
+    initLora();
+
+    // Init Timer A0 for sensor distance measurement
+    Timer_A_initContinuousMode(TIMER_A0_BASE, &a0_contin);
+    Timer_A_initCaptureMode(TIMER_A0_BASE,&a0_capture);
+    Timer_A_startCounter(TIMER_A0_BASE,TIMER_A_CONTINUOUS_MODE);
+
 #ifdef GATEWAYMODE
-    for(i=6; i>0;i--)
+    // Read sensor
+    getSensorData();
+
+    // Convert to fillLevel
+    fillLevel = getTrashcanStatus();
+
+    // Build tx message for LoRa module
+    snprintf(tx,32,"mac tx uncnf 2 0%c01\r\n",fillLevel);
+
+    // Send message 5 times
+    for(i=3; i>0;i--)
     {
-        getSensorData();
-        fillLevel = getTrashcanStatus();
-        snprintf(tx,32,"mac tx uncnf 2 0%c0%d\r\n",fillLevel,trashBinID);
-        myUart_tx(tx);
-        j = 1000000;
+        myUart_tx((unsigned char*)tx);
+        j = 2000000;
         do j--;
         while(j != 0);
     }
@@ -244,10 +270,13 @@ void getData()
     }
 #endif
 #ifdef SlEEPMODE
-    P4OUT |= (0x01<<2);     //switch of lora mote and sensor
-    P2DIR = (0x00<<0);      //switch of high pull from uartpins to lower energy consumption
-    P2SEL0 = (0x00);
-    P2IN = (0x00);
+    //switch off lora mote and sensor
+    GPIO_setOutputHighOnPin( GPIO_PORT_P4, GPIO_PIN2 );
+
+    // disable timer for sensor distance measurement
+    Timer_A_stop(TIMER_A0_BASE);
+
+    // enter low power mode
     __low_power_mode_3();
 #endif
 }
@@ -258,14 +287,15 @@ __interrupt void Timer0_A (void)
 {
     if(P1IN&(0x01<<5))
     {
-        wert0 = TA0R*30;
+        wert0 = TA0R * 30;
     }
     else
     {
-        wert1 = TA0R*30;
+        wert1 = TA0R * 30;
+
         if(wert0>wert1)
         {
-            wert1= wert1 + 65536;
+           wert1= wert1 + 65536;
         }
         USekunden = wert1-wert0;
         Umeter = USekunden * Luftconst;
@@ -273,30 +303,16 @@ __interrupt void Timer0_A (void)
     }
 }
 
-#pragma vector = TIMER0_A1_VECTOR
-__interrupt void Timer0_A1 (void)
-{
-     switch(TA0IV)
-     {
-       case  4:
-           P1OUT ^= 0x01;
-           break;
-       default: break;
-     }
-}
 
 #pragma vector = TIMER1_A1_VECTOR
 __interrupt void Timer1_A1 (void)
 {
-    switch(TA1IV)
-    {
-    case 2:
-        break;
-    default:
-        break;
-    }
+    /* Read interrupt vector register to clear interrupt */
+    volatile uint16_t dummyRead = TA1IV;
+
+    // Exit low power mode
     __low_power_mode_off_on_exit();
-    P4OUT = (0x00<<2);
-    initGPIO();
-    initLora();
+
+    // enable Lora module and sensor
+    GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN2 );
 }

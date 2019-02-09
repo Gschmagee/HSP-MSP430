@@ -25,9 +25,9 @@ uint16_t size = 35;
 //****************************************************************************
 void myUart_tx(unsigned char *txMessage)
 {
-    volatile unsigned long i;
+    volatile uint32_t i;
     myUart_writeBuf(CHANNEL_0,(unsigned char *)txMessage,NULL,NULL);
-    for(i=100000; i>0;i--);                  //small break to allow the lora device to read the message
+    for(i=100000;i>0;i--);                  //small break to allow the lora device to read the message
 }
 //****************************************************************************
 // Uart Send and Receive Function
